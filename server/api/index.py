@@ -3,7 +3,7 @@ import json
 import os
 import traceback
 
-from .ua import get_header_with_rnd_ua
+from .ua import get_header_with_rnd_ua, get_header_with_desktop_rnd_ua
 
 from flask import Flask, request, jsonify
 import requests
@@ -44,10 +44,10 @@ def search():
 
 def get_video_data_from_url(url):
     try:
-        header = get_header_with_rnd_ua()
-        res = requests.get(
+        s = requests.Session()
+        s.headers.update(get_header_with_desktop_rnd_ua())
+        res = s.get(
             url=url,
-            headers=header,
             timeout=5,
         )
         if res.status_code != 200:
@@ -58,9 +58,9 @@ def get_video_data_from_url(url):
         player_data = soup.find_all('script')[5]
         player_url = host + player_data.get("src")
         print("player_url: " + player_url)
-        cms_player_res = requests.get(
+        
+        cms_player_res = s.get(
             url=player_url,
-            headers=header,
             timeout=5,
         )
         p = cms_player_res.text
@@ -68,9 +68,8 @@ def get_video_data_from_url(url):
         a = json.loads(pp)
         video_player_url = str(a['url']) + "&" + "auth_key=" + str(a['auth_key']) + "&" + "time=" + str(a['time'])
         print("video_player_url: " + video_player_url)
-        video_player_res = requests.get(
+        video_player_res = s.get(
             url=video_player_url,
-            headers=header,
             timeout=5,
         )
         dd = video_player_res.text
